@@ -1,0 +1,64 @@
+# Data — never commit raw/processed files, but keep folder structure
+/data/**
+!/data/
+!/data/**/
+!/data/**/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.installed.cfg
+*.egg
+build/
+dist/
+
+# Virtual envs
+.venv/
+venv/
+env/
+ENV/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# ML artifacts — only at project root
+/mlruns/
+/mlartifacts/
+*.pkl
+*.joblib
+*.h5
+*.onnx
+/models/
+/artifacts/
+!/artifacts/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# Secrets
+.env
+.env.local
+*.pem
+*.key
+kaggle.json
+
+# Optuna
+*.db
+*.sqlite
+
+# OS
+Thumbs.db
+desktop.ini
