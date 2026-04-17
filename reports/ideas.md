@@ -62,3 +62,48 @@
 - v2: frequency + target encoding (expanding-window). Target: ~0.94.
 - v3: D1 trick (D1 - day = user registration proxy), device info cleanup. Target: ~0.945.
 - v4: LightGBM + CatBoost rank-average ensemble. Target: ~0.95.
+
+
+## 7. Insights from top solutions (after day 0 reading)
+
+### 7.1 UID reconstruction (Chris Deotte, 1st place technique)
+
+- Dataset does NOT contain a client ID (anonymized by Vesta).
+- Reconstructed UID: `card1 + addr1 + D1n`, where `D1n = D1 - day`.
+- `D1n` is a per-client constant (proxy for card registration day relative to dataset start).
+- Why it works: transactions from the same client share this tuple across time.
+
+### 7.2 Aggregations by UID
+
+Once UID is reconstructed, create per-UID aggregations over transaction history:
+
+- `uid_n_transactions` — total transactions by this UID
+- `uid_amt_mean`, `uid_amt_std`, `uid_amt_max` — spending profile
+- `uid_n_unique_products` — diversity of product types
+- `uid_n_unique_addr2` — geography diversity (multiple countries = risk signal)
+- `uid_first_txn_day`, `uid_last_txn_day` — activity window
+
+These are among the strongest features in the competition.
+
+### 7.3 Normalized D-columns
+
+- D-columns (D1-D15) are timedelta-like: days since some event.
+- For client-level features, subtract `day` from each D column to get the **event date**, not the delta.
+- Example: `D1n = D1 - day` → day the card was issued (constant per client).
+- Apply similar normalization to D2-D15 for additional client-invariant features.
+
+### 7.4 Ensemble strategy (1st place)
+
+- Three diverse GBDT models: XGBoost + CatBoost + LightGBM.
+- Blended with near-equal weights (avoids LB overfitting).
+- Trained on different feature sets to increase diversity.
+- Final private LB AUC: 0.9459.
+
+### 7.5 What to realistically target for this project
+
+- v0 baseline (raw features, LightGBM only): CV ~0.91, Public LB ~0.91
+- v1-v3 (hour/day, aggregations, encodings, D-normalization): CV ~0.94
+- v4 (add UID aggregations + simple XGB+CatBoost ensemble): CV ~0.945, Private LB ~0.92 = top 20%
+
+Top 5-10% requires more aggressive UID reconstruction + client-level feature engineering.
+Top 1% adds V-column grouping + custom post-processing.
