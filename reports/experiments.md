@@ -72,3 +72,47 @@ Same LightGBM hyperparameters as v0 to isolate the effect of FE.
 - `card1` is a BIN-level key, not a true client ID (max count 28015).
   Proper UID via card1 + addr1 + D1n is the next major step.
 - Jump from top-50% to top-35% on private LB with a single FE iteration.
+
+
+## v2 — LightGBM + encodings
+
+**Date**: 2026-04-17
+**Notebook**: `notebooks/04_encodings.ipynb`
+**Model files**: `sub_lgbm_enc_v2.csv`, `oof_lgbm_enc_v2.csv`
+
+### What changed vs v1
+Added `src/features/encodings.py` with:
+- **Frequency encoding** for 12 columns (card1-5, addr1-2, P/R_emaildomain, DeviceInfo, id_30/31/33)
+  — target-independent, computed on train + test together
+- **Out-of-fold target encoding** for 6 columns (card1, addr1, P/R_emaildomain, ProductCD, DeviceInfo)
+  — expanding window, smoothing=10, fold 0 filled with global mean
+
+Same LightGBM hyperparameters as v0 and v1.
+
+### Results
+| Metric | Value | Delta vs v1 |
+|---|---|---|
+| Fold 1 AUC | 0.87698 | -0.004 |
+| Fold 2 AUC | 0.90928 | +0.003 |
+| Fold 3 AUC | 0.92868 | -0.000 |
+| Fold 4 AUC | 0.91967 | -0.002 |
+| CV mean | 0.90865 | **-0.001** |
+| CV std | 0.01953 | +0.001 |
+| **Public LB** | **0.92804** | **+0.006** |
+| **Private LB** | **0.90682** | **+0.004** |
+
+### Notes
+- **CV regressed by -0.001, but LB improved by +0.006**. Second time CV
+  underestimates FE gain — this is a fundamental property of our
+  expanding-window scheme combined with target encoding:
+  * On fold 1, train = only fold 0, where TE values are constant
+    (filled with global mean to avoid self-leakage).
+  * Model cannot learn to use TE on fold 1 validation.
+  * On real test, model trains on full train where TE is fully populated.
+- **Debugging story**: initial implementation used fold-0 itself as bootstrap
+  (self-leakage), which caused catastrophic fold 1 AUC drop to 0.822.
+  Fix: replace fold-0 TE with global mean. Keeps the feature safe at the
+  cost of making it useless on that fold specifically.
+- Jump from top-35% to ~top-25% on private LB.
+- Potential next step: lower smoothing (5 instead of 10) to let TE signal
+  through for mid-frequency categories.

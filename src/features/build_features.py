@@ -10,6 +10,7 @@ from __future__ import annotations
 import pandas as pd
 
 from src.features.aggregations import add_card1_aggregations
+from src.features.encodings import add_frequency_encoding, add_target_encoding
 from src.features.money_features import add_money_features
 from src.features.time_features import add_time_features
 
@@ -17,6 +18,8 @@ from src.features.time_features import add_time_features
 def build_features(
     train: pd.DataFrame,
     test: pd.DataFrame | None = None,
+    target: pd.Series | None = None,
+    folds: np.ndarray | None = None,
     verbose: bool = True,
 ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
     """Apply the full feature-engineering pipeline.
@@ -70,7 +73,24 @@ def build_features(
     if verbose:
         added = train.shape[1] - n_before
         print(f"  [3/3] aggregations   : +{added} cols -> {train.shape[1]} total")
+    # 4. Frequency encoding — safe, target-independent
+    train, test = add_frequency_encoding(train, test)
+    if verbose:
+        added = train.shape[1] - n_before
+        print(f"  [4/5] frequency enc  : +{added} cols -> {train.shape[1]} total")
+        n_before = train.shape[1]
 
+    # 5. Target encoding — only if target + folds provided (train-time)
+    if target is not None and folds is not None:
+        if test is None:
+            raise ValueError("Target encoding requires test dataframe")
+        train, test = add_target_encoding(train, test, target, folds)
+        if verbose:
+            added = train.shape[1] - n_before
+            print(f"  [5/5] target enc     : +{added} cols -> {train.shape[1]} total")
+    else:
+        if verbose:
+            print("  [5/5] target enc     : skipped (no target/folds provided)")
     if verbose:
         print(f"Done | train shape: {train.shape}")
 
