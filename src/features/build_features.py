@@ -13,7 +13,7 @@ from src.features.aggregations import add_card1_aggregations
 from src.features.encodings import add_frequency_encoding, add_target_encoding
 from src.features.money_features import add_money_features
 from src.features.time_features import add_time_features
-
+from src.features.uid_features import add_uid, add_uid_aggregations
 
 def build_features(
     train: pd.DataFrame,
@@ -56,7 +56,7 @@ def build_features(
         test = add_time_features(test)
     if verbose:
         added = train.shape[1] - n_before
-        print(f"  [1/3] time features  : +{added} cols -> {train.shape[1]} total")
+        print(f"  [1/6] time features  : +{added} cols -> {train.shape[1]} total")
         n_before = train.shape[1]
 
     # 2. Money features — also per-row
@@ -65,19 +65,30 @@ def build_features(
         test = add_money_features(test)
     if verbose:
         added = train.shape[1] - n_before
-        print(f"  [2/3] money features : +{added} cols -> {train.shape[1]} total")
+        print(f"  [2/6] money features : +{added} cols -> {train.shape[1]} total")
         n_before = train.shape[1]
 
     # 3. Card1 aggregations — train + test combined for stability
     train, test = add_card1_aggregations(train, test)
     if verbose:
         added = train.shape[1] - n_before
-        print(f"  [3/3] aggregations   : +{added} cols -> {train.shape[1]} total")
+        print(f"  [3/6] aggregations   : +{added} cols -> {train.shape[1]} total")
+        
+    # 3b. UID reconstruction + UID aggregations
+    train = add_uid(train)
+    if test is not None:
+        test = add_uid(test)
+    train, test = add_uid_aggregations(train, test)
+    if verbose:
+        added = train.shape[1] - n_before
+        print(f"  [3b/6] UID aggregations: +{added} cols -> {train.shape[1]} total")
+        n_before = train.shape[1]
+        
     # 4. Frequency encoding — safe, target-independent
     train, test = add_frequency_encoding(train, test)
     if verbose:
         added = train.shape[1] - n_before
-        print(f"  [4/5] frequency enc  : +{added} cols -> {train.shape[1]} total")
+        print(f"  [4/6] frequency enc  : +{added} cols -> {train.shape[1]} total")
         n_before = train.shape[1]
 
     # 5. Target encoding — only if target + folds provided (train-time)
@@ -87,10 +98,10 @@ def build_features(
         train, test = add_target_encoding(train, test, target, folds)
         if verbose:
             added = train.shape[1] - n_before
-            print(f"  [5/5] target enc     : +{added} cols -> {train.shape[1]} total")
+            print(f"  [5/6] target enc     : +{added} cols -> {train.shape[1]} total")
     else:
         if verbose:
-            print("  [5/5] target enc     : skipped (no target/folds provided)")
+            print("  [5/6] target enc     : skipped (no target/folds provided)")
     if verbose:
         print(f"Done | train shape: {train.shape}")
 

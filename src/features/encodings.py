@@ -31,6 +31,7 @@ FREQUENCY_ENCODE_COLS = [
     "id_30",
     "id_31",
     "id_33",
+    "uid",
 ]
 
 
@@ -104,6 +105,7 @@ TARGET_ENCODE_COLS = [
     "R_emaildomain",
     "ProductCD",
     "DeviceInfo",
+    "uid",
 ]
 
 

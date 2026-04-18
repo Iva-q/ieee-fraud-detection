@@ -116,3 +116,45 @@ Same LightGBM hyperparameters as v0 and v1.
 - Jump from top-35% to ~top-25% on private LB.
 - Potential next step: lower smoothing (5 instead of 10) to let TE signal
   through for mid-frequency categories.
+
+
+## v3 — LightGBM + UID reconstruction
+
+**Date**: 2026-04-17
+**Notebook**: `notebooks/05_uid.ipynb`
+**Model files**: `sub_lgbm_uid_v3.csv`, `oof_lgbm_uid_v3.csv`
+
+### What changed vs v2
+Added `src/features/uid_features.py`:
+- `D1n = D1 - day` — card registration day (per-client invariant)
+- `UID = card1_addr1_D1n` — client proxy (199K unique values in train)
+- UID aggregations: count, mean/std/max amt, nunique_productcd, amt ratio
+- UID also plumbed into frequency + target encoding lists
+
+### Results
+| Metric | Value | Delta vs v2 |
+|---|---|---|
+| Fold 1 AUC | 0.88606 | +0.009 |
+| Fold 2 AUC | 0.93196 | +0.023 |
+| Fold 3 AUC | 0.95372 | +0.025 |
+| Fold 4 AUC | 0.94452 | +0.025 |
+| CV mean | 0.92907 | **+0.020** |
+| CV std | 0.02600 | +0.006 |
+| **Public LB** | **0.95019** | **+0.022** |
+| **Private LB** | **0.92573** | **+0.019** |
+
+### Notes
+- **The breakthrough iteration.** UID aggregations give 10x the gain of all
+  prior FE combined.
+- **CV finally calibrated**: +0.020 CV matches +0.022 Public LB. UID
+  features don't suffer from the fold-0 dilution problem of target encoding
+  because they're target-independent and computed over train + test.
+- UID coverage: 88.7% (addr1 is the main source of NaN). 199K unique UIDs
+  over 524K valid transactions -> ~2.6 txns per UID on average, close to
+  real-world "one client = one UID".
+- Jump from top-25% to top-10-12% on private LB with a single iteration.
+- Best_iter dropped from 400-500 to 130-280 — model finds signal quickly,
+  no overfitting.
+- Std grew to 0.026 due to uneven improvement across folds (fold 1 gained
+  less because training on only fold 0 still has limited data for stable
+  UID statistics). Not a problem — all folds improved, just unevenly.
