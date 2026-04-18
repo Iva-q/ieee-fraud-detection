@@ -204,3 +204,31 @@ Added `src/features/uid_features.py`:
   internal cat handling is already very strong.
 - CV std grew slightly (0.026 -> 0.028); monitor in future iterations.
 - Training speedup will compound during Optuna tuning (50-100 trials).
+
+
+## Leaderboard calibration (2026-04-17)
+
+Verified actual leaderboard positions via Kaggle (reference points and
+neighboring ranks around our scores):
+
+| Private LB | Rank (approx) | Percentile |
+|---|---|---|
+| 0.9459 (#1, winning team) | 1 | top 0.02% |
+| 0.9289 (top-5% reference) | 226 | top 3.5% |
+| 0.9249 (our v4) | ~1528 | **top 24%** |
+| 0.9068 (our v2) | ~3500 | top 55% |
+
+**Corrected assessment**: v4 reaches approximately top-24%, not top-10% as
+initially extrapolated. The leaderboard has a heavy tail between 0.92 and
+0.93, with thousands of teams clustered in this zone (public kernels peak
+around here).
+
+### Path to a stronger result
+Medal zones (silver = top-5%) would require Private ~0.933+. Realistic gains
+from remaining items in our plan:
+- Hyperparameter tuning via Optuna: +0.002..+0.004
+- LightGBM + CatBoost ensemble: +0.003..+0.005
+- UID-based post-processing (winning-team technique): +0.010..+0.015
+
+Combined, top-10% (Private ~0.930) is realistic. Top-5% would need the
+post-processing trick, which is out of scope for this pet project.
