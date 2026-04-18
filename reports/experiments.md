@@ -158,3 +158,49 @@ Added `src/features/uid_features.py`:
 - Std grew to 0.026 due to uneven improvement across folds (fold 1 gained
   less because training on only fold 0 still has limited data for stable
   UID statistics). Not a problem — all folds improved, just unevenly.
+
+
+## v4 — Feature selection via permutation importance
+
+**Date**: 2026-04-17
+**Notebook**: `notebooks/06_feature_selection.ipynb`
+**Model files**: `sub_lgbm_fs_v4.csv`, `oof_lgbm_fs_v4.csv`
+**Selected features**: `reports/selected_features_v4.json`
+
+### What changed vs v3
+- Ran permutation importance (n_repeats=3, scoring=roc_auc) on fold-4 model
+- Dropped 210 features with importance_mean <= 0 (45% of all features)
+- Kept 261 features for training
+- Retrained full CV with selected set, same LightGBM hyperparameters
+
+### Top 10 features by permutation importance
+| Feature | Importance | Comment |
+|---|---|---|
+| uid_te | 0.0895 | UID target encoding — #1 by far, 10x the next |
+| C1 | 0.0086 | Vesta Counting feature |
+| C14, C13, C11 | 0.0053, 0.0045, 0.0034 | More C-features |
+| id_31 | 0.0020 | Browser (native categorical) |
+| DeviceInfo | 0.0019 | Device model (native categorical) |
+| P_emaildomain | 0.0018 | Purchaser email (native categorical) |
+| card1_te | 0.0018 | Card TE |
+| C9, uid_amt_mean | 0.0018, 0.0017 | |
+
+### Results
+| Metric | v3 (471 feat) | v4 (261 feat) | Delta |
+|---|---|---|---|
+| CV mean | 0.92907 | 0.92933 | +0.00026 |
+| CV std | 0.02600 | 0.02773 | +0.00173 |
+| Public LB | 0.95019 | 0.95036 | +0.00017 |
+| Private LB | 0.92573 | 0.92491 | -0.00082 |
+| Fold 4 training time | 31s | 22s | -30% |
+
+### Notes
+- All metric deltas are within noise (~+-0.001). Main goal achieved:
+  45% fewer features with no accuracy loss.
+- `uid_te` alone has 10x the importance of the next feature — confirms
+  UID reconstruction was the right call.
+- Native LightGBM categoricals (`DeviceInfo`, `id_31`, `P_emaildomain`)
+  outperform our explicit `_freq` and `_te` versions — means LightGBM's
+  internal cat handling is already very strong.
+- CV std grew slightly (0.026 -> 0.028); monitor in future iterations.
+- Training speedup will compound during Optuna tuning (50-100 trials).
