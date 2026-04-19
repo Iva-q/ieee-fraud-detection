@@ -1,0 +1,15 @@
+{
+  "params": {
+    "num_leaves": 127,
+    "learning_rate": 0.011368141435939727,
+    "min_child_samples": 23,
+    "feature_fraction": 0.5179196344165578,
+    "bagging_fraction": 0.8168795849909857,
+    "bagging_freq": 8,
+    "reg_alpha": 0.12049205737239607,
+    "reg_lambda": 0.020040412793810546
+  },
+  "cv_auc": 0.9335556150736409,
+  "n_trials": 50,
+  "notes": "Optuna TPE + MedianPruner, scored on 4-fold expanding-window CV"
+}
