@@ -282,3 +282,50 @@ post-processing trick, which is out of scope for this pet project.
 - Optuna study object is in memory only; if reproducibility is critical,
   seed is fixed (TPE seed=42, prune on median).
 
+
+
+## SHAP analysis (2026-04-18)
+
+**Notebook**: `notebooks/09_shap.ipynb`
+**Figures**: `reports/figures/08_shap_summary.png`, `09_shap_bar.png`,
+`10_shap_dependence_uid_te.png`, `11_shap_force_tp.png`, `12_shap_force_fp.png`
+
+### Setup
+- Model: LightGBM v5 (fold 4, AUC 0.94780, best_iter=816)
+- TreeExplainer on a stratified sample of 5000 rows (500 fraud + 4500 non-fraud)
+- SHAP values computed in 112s
+
+### Key findings
+
+**1. uid_te dominates.** Mean |SHAP| = 0.70, next feature (C13) = 0.16 — a 4.5x gap.
+SHAP values for uid_te span [-2, +7]; no other feature reaches +2.
+A single feature can move prediction from 3.5% baseline to 99.7% on its own.
+
+**2. Top-20 feature mix is balanced.**
+- 5 engineered (uid_te, card1_te, uid_amt_mean, R_emaildomain_te, card1_amt_mean, D1n)
+- 5 Vesta C-features (C13, C1, C11, C14, C5)
+- 3 Vesta D-features (D2, D1, D3)
+- 3 native categoricals (P_emaildomain, card6, R_emaildomain)
+- 2 V-features (V91, V70) + TransactionAmt
+
+**3. S-shaped non-linearity on uid_te.**
+Dependence plot reveals the model uses uid_te in three zones:
+- uid_te < 0.03 -> SHAP ≈ -2 (clean history)
+- 0.05-0.15 -> transition (-1 to +6)
+- >= 0.20 -> saturates at +6.5 (near-certain fraud)
+
+**4. TransactionAmt interaction catches card-testing pattern.**
+In the high-uid_te zone, low-amount transactions dominate — consistent with
+fraudsters running small test charges on a compromised card.
+
+**5. Model is well-calibrated at high confidence.**
+Among predictions with P(fraud) > 0.9 in the 5000-sample, 137 are true positives
+vs 5 false positives (27:1 ratio). High-confidence errors are rare.
+
+### Notes for CV/interviews
+- uid_te being 4.5x stronger than anything else was NOT obvious from EDA.
+  It emerged only after engineering UID + applying OOF target encoding
+  with smoothing. Key "lessons learned" item.
+- The S-curve in dependence plot explains why CatBoost blend didn't help:
+  LGBM already extracts most signal from uid_te on its own, leaving little
+  for a second model to add.

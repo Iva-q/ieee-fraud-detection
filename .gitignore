@@ -62,3 +62,5 @@ kaggle.json
 # OS
 Thumbs.db
 desktop.ini
+# CatBoost temporary training logs
+catboost_info/
