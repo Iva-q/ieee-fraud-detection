@@ -1,0 +1,16 @@
+﻿services:
+  fraud-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ieee-fraud-detection:latest
+    container_name: fraud-api
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    # Resource limits: protect the host from a runaway process
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "2.0"

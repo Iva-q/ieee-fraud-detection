@@ -1,0 +1,32 @@
+﻿# Data and artifacts that don't belong in the image
+data/
+mlruns/
+catboost_info/
+notebooks/
+
+# Virtual environments and caches
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Git and editor
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Tests
+tests/
+
+# Documentation-only files
+reports/figures/
+reports/*.png
+README.md
+
+# Local sample files
+sample_*.json
