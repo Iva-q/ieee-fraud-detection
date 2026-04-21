@@ -28,11 +28,18 @@ MODEL_VERSION = "lgbm_v5"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Load artifacts at startup, release at shutdown."""
-    model_registry.load_artifacts(
-        model_path="models/lgbm_v5.txt",
-        preprocessor_path="models/preprocessor.pkl",
-    )
+    """Load artifacts at startup, release at shutdown.
+
+    If artifacts are already registered (e.g. injected by tests via
+    set_artifacts), skip disk loading. This allows integration tests
+    to run against a small synthetic model without touching production
+    model files.
+    """
+    if not model_registry.is_ready():
+        model_registry.load_artifacts(
+            model_path="models/lgbm_v5.txt",
+            preprocessor_path="models/preprocessor.pkl",
+        )
     yield
     # Nothing to clean up — Python GC handles it
 
