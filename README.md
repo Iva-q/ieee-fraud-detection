@@ -13,8 +13,7 @@ time-aware cross-validation, hyperparameter tuning, model interpretability,
 and a production-style FastAPI service packaged in Docker.
 
 **Result:** Private leaderboard 0.9275 AUC (rank 1085 / 6351, **top 17%**)
-with a single LightGBM model. Deployed as a FastAPI service in a Docker
-container with ~200ms inference latency per transaction.
+with a single LightGBM model. Deployed as a FastAPI service in a Docker container with p50 latency of 66 ms per transaction.
 
 
 ## Highlights
@@ -26,7 +25,7 @@ container with ~200ms inference latency per transaction.
 | CV AUC (4-fold, expanding window) | 0.9336 ± 0.024 |
 | Model | LightGBM with Optuna-tuned hyperparameters |
 | Features after selection | 261 (of 471 engineered) |
-| Inference latency (p50, Docker) | ~200 ms |
+| Inference latency (p50 / p95, Docker) | 66 ms / 84 ms |
 | Model size on disk | 11.5 MB (booster) + 35 MB (preprocessor lookups) |
 
 **Key engineering decisions that mattered:**
