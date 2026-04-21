@@ -68,3 +68,6 @@ catboost_info/
 # Local sample files
 sample_fraud.json
 sample_high_fraud.json
+
+# README backup
+README.md.backup
